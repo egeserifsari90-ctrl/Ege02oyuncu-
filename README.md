@@ -1,0 +1,2 @@
+# Ege02oyuncu-
+Chatgpt
