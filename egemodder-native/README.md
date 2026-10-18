@@ -1,12 +1,19 @@
-# Egemodder native – Super Bear Adventure 13.0.8
+# Egemodder 13.0.8 — IL2CPP bridge patch
 
-**This is native proof-of-concept source, NOT a finished mod APK.** It is separate from the standalone WebView demo.
+This is a **patch for an Android ARMv7 native library**, not a working modded Super Bear Adventure APK.
 
-Verified from the user-provided XAPK:
-- Base package: com.Earthkwak.Platformer.apk plus config.armeabi_v7a.apk.
-- Unity IL2CPP runtime is in lib/armeabi-v7a/libil2cpp.so.
-- Target runtime exports il2cpp_domain_get, il2cpp_thread_attach, il2cpp_domain_assembly_open, il2cpp_assembly_get_image, il2cpp_class_from_name, il2cpp_class_get_method_from_name, il2cpp_runtime_invoke.
-- The native function egemodder_apply_game_time_scale(factor) can call UnityEngine.Time.set_timeScale (when integrated and invoked on Unity main thread). Game-wide speed is NOT verified player movement speed.
-- Syntax checked locally with g++ -std=c++17 -fPIC -Wall -Wextra -Werror -fsyntax-only.
+## Improvements
+- Rejects out-of-range, NaN, and infinite time-scale values before calling Unity.
+- Resolves IL2CPP APIs in a library that must already be loaded into the same process.
+- Calls UnityEngine.Time.set_timeScale through IL2CPP method reflection.
+- Adds status strings for diagnostics and cleanup of the dlopen handle on every path.
+- Adds mocked IL2CPP tests for rejection, argument passing, and managed exceptions. The mock intentionally does not claim compatibility with the actual game.
+- Android NDK target: armeabi-v7a, API 23; GitHub Actions compiles/tests both host mock and Android library.
 
-Required before calling anything a working SBA mod: load native library within actual game process, implement game-specific flying/unlimited jumps/no-clip/player-speed hooks, wire the Egemodder 1234 on-screen menu to hooks, re-sign appropriate APK splits, and verify all effects on an Android device. This source has not been injected or tested on device.
+## Missing for real SBA game APK
+- A mechanism to load libegemodder.so into the game process in a compatible and safe manner.
+- Game-specific player ability methods and their runtime linkage for fly, noclip, unlimited jump, and movement speed.
+- An actual in-game password-protected mod menu that triggers these functions.
+- APK/split packaging, signing, installation and on-device gameplay verification.
+
+Passing CI means the C++ library **compiles and mock tests pass**, not that any cheat works in the game.
