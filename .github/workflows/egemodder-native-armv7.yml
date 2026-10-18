@@ -13,14 +13,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v3
-      - name: Install NDK for armeabi-v7a
-        run: sdkmanager --install 'ndk;27.2.12479018'
-      - name: Compile native library for Super Bear Adventure ABI
+      - name: Install NDK from runner Android SDK
         shell: bash
         run: |
+          set -euo pipefail
+          if [[ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          elif [[ -x "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" ]]; then
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager"
+          else
+            echo "Android SDK command line tools not found" >&2
+            exit 1
+          fi
+          "$SDKMANAGER" --install 'ndk;27.2.12479018'
+      - name: Compile native library for Super Bear Adventure ARMv7
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOOLCHAIN="$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake"
+          test -f "$TOOLCHAIN"
           cmake -S egemodder-native -B egemodder-native/build \
-            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
             -DANDROID_ABI=armeabi-v7a \
             -DANDROID_PLATFORM=android-23 \
             -DCMAKE_BUILD_TYPE=Release
