@@ -1,0 +1,70 @@
+name: Egemodder 1234 - APK build and source setup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/egemodder-test-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+
+      - name: Extract Google Drive project archive into egemodder-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE='Egemodder-1234-GitHub-APK-Derleme (1).zip'
+          test -f "$ARCHIVE"
+          mkdir -p egemodder-test
+          unzip -o -q "$ARCHIVE" 'build.gradle' 'settings.gradle' 'README.txt' 'app/*' -d egemodder-test
+          test -f egemodder-test/app/src/main/AndroidManifest.xml
+          test -f egemodder-test/app/src/main/java/com/egemodder/demo/MainActivity.java
+          test -f egemodder-test/app/src/main/assets/index.html
+
+      - name: Save extracted project source to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add egemodder-test
+          if ! git diff --cached --quiet; then
+            git commit -m 'Extract Egemodder 1234 test Android project from Drive archive'
+            git push origin HEAD:main
+          fi
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build Android test APK
+        working-directory: egemodder-test
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Egemodder-1234-Test-APK
+          path: egemodder-test/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
