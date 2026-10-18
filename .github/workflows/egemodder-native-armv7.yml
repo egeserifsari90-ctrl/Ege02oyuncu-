@@ -26,6 +26,15 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
           cmake --build egemodder-native/build-host --parallel 2
           ctest --test-dir egemodder-native/build-host --output-on-failure
+      - name: Load Dobby ARMv7 hook dependency from user archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p egemodder-native/third_party/dobby/armeabi-v7a
+          unzip -p 'Egemodder-1234-Android-Mod-Menu-5.0-AIDE.zip' \
+            'Android-Mod-Menu-5.0/app/src/main/jni/Dobby/armeabi-v7a/libdobby.a' \
+            > egemodder-native/third_party/dobby/armeabi-v7a/libdobby.a
+          test -s egemodder-native/third_party/dobby/armeabi-v7a/libdobby.a
       - name: Install Android NDK from runner Android SDK
         shell: bash
         run: |
@@ -52,9 +61,12 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release
           cmake --build egemodder-native/build --parallel 2
           test -s egemodder-native/build/libegemodder.so
+          test -s egemodder-native/build/libmain.so
       - name: Upload Android native library (NOT an APK)
         uses: actions/upload-artifact@v4
         with:
           name: Egemodder-Native-ARMv7-PATCH-NOT-APK
-          path: egemodder-native/build/libegemodder.so
+          path: |
+            egemodder-native/build/libegemodder.so
+            egemodder-native/build/libmain.so
           if-no-files-found: error

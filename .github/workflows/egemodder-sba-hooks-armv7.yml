@@ -1,0 +1,84 @@
+name: Egemodder SBA 13.0.8 game hook build (experimental)
+on:
+  push:
+    branches: [egemodder-game-hooks-armv7]
+    paths:
+      - 'egemodder-native/**'
+      - '.github/workflows/egemodder-sba-hooks-armv7.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-game-hooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host compile and IL2CPP mock tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S egemodder-native -B egemodder-native/build-host -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build egemodder-native/build-host --parallel 2
+          ctest --test-dir egemodder-native/build-host --output-on-failure
+      - name: Unpack existing Dobby ARMv7 library from user's archived sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p egemodder-native/third_party/dobby/armeabi-v7a
+          unzip -p 'Egemodder-1234-Android-Mod-Menu-5.0-AIDE.zip'             'Android-Mod-Menu-5.0/app/src/main/jni/Dobby/armeabi-v7a/libdobby.a'             > egemodder-native/third_party/dobby/armeabi-v7a/libdobby.a
+          test -s egemodder-native/third_party/dobby/armeabi-v7a/libdobby.a
+      - name: Locate Android NDK from runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
+            MANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          elif [[ -x "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" ]]; then
+            MANAGER="$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager"
+          else
+            echo 'sdkmanager missing' >&2; exit 1
+          fi
+          "$MANAGER" --install 'ndk;27.2.12479018'
+      - name: Compile actual SBA game hook and loader proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOOLCHAIN="$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake"
+          test -f "$TOOLCHAIN"
+          cmake -S egemodder-native -B egemodder-native/build-armv7             -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"             -DANDROID_ABI=armeabi-v7a -DANDROID_PLATFORM=android-25 -DCMAKE_BUILD_TYPE=Release
+          cmake --build egemodder-native/build-armv7 --parallel 2
+          test -s egemodder-native/build-armv7/libegemodder.so
+          test -s egemodder-native/build-armv7/libmain.so
+          readelf -Ws egemodder-native/build-armv7/libmain.so | grep 'JNI_OnLoad'
+      - name: Build injected Android menu DEX
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager"
+          if [[ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+          mkdir -p egemodder-native/build-menu/classes egemodder-native/build-menu/dex
+          javac -encoding UTF-8 -source 8 -target 8 \
+            -classpath "$ANDROID_HOME/platforms/android-35/android.jar" \
+            -d egemodder-native/build-menu/classes \
+            egemodder-native/java/com/egemodder/Menu.java
+          (cd egemodder-native/build-menu/classes && jar cf ../menu.jar com)
+          "$ANDROID_HOME/build-tools/35.0.0/d8" --min-api 32 \
+            --lib "$ANDROID_HOME/platforms/android-35/android.jar" \
+            --output egemodder-native/build-menu/dex \
+            egemodder-native/build-menu/menu.jar
+          test -s egemodder-native/build-menu/dex/classes.dex
+          mv egemodder-native/build-menu/dex/classes.dex egemodder-native/build-menu/dex/classes5.dex
+      - name: Upload experimental native libraries (not installable APK)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Egemodder-GameHooks-ARMv7-EXPERIMENTAL-NOT-APK
+          path: |
+            egemodder-native/build-armv7/libmain.so
+            egemodder-native/build-armv7/libegemodder.so
+            egemodder-native/build-menu/dex/classes5.dex
+          if-no-files-found: error
