@@ -1,0 +1,34 @@
+name: Egemodder Native ARMv7 Compiler (not game APK)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'egemodder-native/**'
+      - '.github/workflows/egemodder-native-armv7.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+      - name: Install NDK for armeabi-v7a
+        run: sdkmanager --install 'ndk;27.2.12479018'
+      - name: Compile native library for Super Bear Adventure ABI
+        shell: bash
+        run: |
+          cmake -S egemodder-native -B egemodder-native/build \
+            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=armeabi-v7a \
+            -DANDROID_PLATFORM=android-23 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build egemodder-native/build --parallel 2
+          test -s egemodder-native/build/libegemodder.so
+      - name: Upload native proof of concept only
+        uses: actions/upload-artifact@v4
+        with:
+          name: Egemodder-Native-ARMv7-PROTOTYPE-NOT-APK
+          path: egemodder-native/build/libegemodder.so
+          if-no-files-found: error
