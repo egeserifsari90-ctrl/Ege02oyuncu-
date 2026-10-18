@@ -10,6 +10,7 @@
 
 #ifdef __ANDROID__
 #include <android/log.h>
+#include <jni.h>
 extern "C" int DobbyHook(void*, void*, void**);
 #define EGLOG(...) __android_log_print(ANDROID_LOG_INFO,"EGEMODDER",__VA_ARGS__)
 #else
@@ -174,3 +175,10 @@ extern "C" void egemodder_start(void*){
   else started.store(false);
 #endif
 }
+
+#ifdef __ANDROID__
+extern "C" JNIEXPORT jint JNICALL Java_com_egemodder_Menu_nativeSetFeature(
+    JNIEnv*, jclass, jint feature, jfloat value) {
+  return egemodder_set_feature(feature,value);
+}
+#endif
