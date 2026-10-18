@@ -1,7 +1,7 @@
 name: Egemodder SBA 13.0.8 game hook build (experimental)
 on:
   push:
-    branches: [egemodder-game-hooks-armv7]
+    branches: [main, egemodder-game-hooks-armv7]
     paths:
       - 'egemodder-native/**'
       - '.github/workflows/egemodder-sba-hooks-armv7.yml'
