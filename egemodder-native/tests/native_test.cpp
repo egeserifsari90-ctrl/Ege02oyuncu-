@@ -4,12 +4,25 @@
 #include <iostream>
 #include <limits>
 extern "C" int egemodder_apply_game_time_scale(float);
+extern "C" int egemodder_set_feature(int,float);
+extern "C" int egemodder_hook_state();
 extern "C" const char* egemodder_time_scale_status(int);
 extern "C" float fake_last_scale();
 extern "C" int fake_call_count();
 extern "C" void fake_raise_exception(int);
 #define CHECK(expr) do { if (!(expr)) { std::cerr << "FAILED " << __FILE__ << ":" << __LINE__ << ": " #expr "\n"; return EXIT_FAILURE; } } while (false)
 int main() {
+  CHECK(egemodder_hook_state() == 0);
+  CHECK(egemodder_set_feature(0,1.0f) == -1);
+  CHECK(egemodder_set_feature(1,1.0f) == 0);
+  CHECK(egemodder_set_feature(1,0.0f) == 0);
+  CHECK(egemodder_set_feature(2,1.0f) == 0);
+  CHECK(egemodder_set_feature(3,1.0f) == 0);
+  CHECK(egemodder_set_feature(4,0.24f) == -1);
+  CHECK(egemodder_set_feature(4,3.01f) == -1);
+  CHECK(egemodder_set_feature(4,1.5f) == 0);
+  CHECK(egemodder_set_feature(4,std::numeric_limits<float>::quiet_NaN()) == -1);
+
   CHECK(egemodder_apply_game_time_scale(std::numeric_limits<float>::quiet_NaN()) == -1);
   CHECK(egemodder_apply_game_time_scale(std::numeric_limits<float>::infinity()) == -1);
   CHECK(egemodder_apply_game_time_scale(0.24f) == -1);
