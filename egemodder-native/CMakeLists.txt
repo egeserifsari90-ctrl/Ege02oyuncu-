@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.18)
+project(egemodder_native LANGUAGES CXX)
+add_library(egemodder SHARED src/egemodder.cpp)
+target_compile_features(egemodder PRIVATE cxx_std_17)
+target_link_libraries(egemodder PRIVATE dl)
