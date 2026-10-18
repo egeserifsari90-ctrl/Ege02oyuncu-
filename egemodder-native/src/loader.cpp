@@ -21,5 +21,20 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm,void* reserved){
   }else{
     __android_log_print(ANDROID_LOG_WARN,"EGEMODDER","Game hooks inactive: %s",dlerror());
   }
+  // Load the Java menu from the injected secondary DEX via the game ClassLoader.
+  // FindClass uses the JNI_OnLoad library class loader context.
+  JNIEnv* env=nullptr;
+  if(vm->GetEnv(reinterpret_cast<void**>(&env),JNI_VERSION_1_6)==JNI_OK && env){
+    jclass menu=env->FindClass("com/egemodder/Menu");
+    if(menu){
+      jmethodID start=env->GetStaticMethodID(menu,"start","()V");
+      if(start)env->CallStaticVoidMethod(menu,start);
+      env->DeleteLocalRef(menu);
+    }
+    if(env->ExceptionCheck()){
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+    }
+  }
   return status;
 }
