@@ -18,7 +18,7 @@ extern "C" int DobbyHook(void*, void*, void**);
 #endif
 
 namespace {
-std::atomic<bool> jump_enabled{true};
+std::atomic<bool> jump_enabled{false};
 std::atomic<bool> hover_enabled{false};
 std::atomic<bool> noclip_enabled{false};
 std::atomic<float> time_scale{1.f};
