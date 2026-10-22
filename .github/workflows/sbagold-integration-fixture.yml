@@ -1,0 +1,19 @@
+name: SBAGOLD XAPK Integration (synthetic)
+on:
+  push:
+    paths: ['sbagold/integration/**', '.github/workflows/sbagold-integration-fixture.yml']
+  pull_request:
+    paths: ['sbagold/integration/**', '.github/workflows/sbagold-integration-fixture.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-fixture:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate split-APK injector (no copyrighted binaries)
+        run: python -m unittest discover -s sbagold/integration -p 'test_*.py' -v
