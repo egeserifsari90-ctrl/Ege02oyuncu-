@@ -9,9 +9,9 @@ permissions:
   contents: read
 jobs:
   host-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure
         run: cmake -S sbagold -B sbagold/build -DCMAKE_BUILD_TYPE=Release
       - name: Build
