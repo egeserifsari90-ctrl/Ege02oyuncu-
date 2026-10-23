@@ -15,9 +15,9 @@ permissions:
   contents: read
 jobs:
   native-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Host test of IL2CPP bridge (mock runtime)
         shell: bash
         run: |
