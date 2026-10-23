@@ -12,9 +12,9 @@ permissions:
   contents: read
 jobs:
   build-game-hooks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Host compile and IL2CPP mock tests
         shell: bash
         run: |
